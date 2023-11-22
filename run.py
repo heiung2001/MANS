@@ -1,7 +1,7 @@
 import torch
 import mmns
 from mmns.config import Trainer, Tester
-from mmns.module.model import MMTransE
+from mmns.module.model import MMTransE, MMRotatE
 from mmns.module.loss import MarginLoss
 from mmns.module.strategy import NegativeSampling
 from mmns.data import TrainDataLoader, TestDataLoader
@@ -68,5 +68,49 @@ if __name__ == "__main__":
         # triple classification task
         acc, p, r, f, _ = tester.run_triple_classification_four_metrics()
         print(acc, p, r, f)
+
+    elif args.kernel == 'rotate':
+        rotate = MMRotatE(
+            ent_tot=train_dataloader.get_ent_tot(),
+            rel_tot=train_dataloader.get_rel_tot(),
+            dim=128,
+            p_norm=1,
+            norm_flag=True,
+            img_dim=args.img_dim,
+            img_emb=img_emb,
+            test_mode=args.test_mode,
+            beta=args.beta
+        )
+        print(rotate)
+
+        model = NegativeSampling(
+            model=rotate,
+            loss=MarginLoss(margin=args.margin),
+            batch_size=train_dataloader.get_batch_size(),
+            neg_mode=args.neg_mode
+        )
+
+        trainer = Trainer(
+            model=model,
+            data_loader=train_dataloader,
+            train_times=args.epoch,
+            alpha=0.1,
+            use_gpu=True,
+            opt_method='Adam',
+            train_mode=args.train_mode
+        )
+        trainer.run()
+        rotate.save_checkpoint(args.save)
+        rotate.load_checkpoint(args.save)
+
+        tester = Tester(
+            model=rotate,
+            data_loader=test_dataloader,
+            use_gpu=True
+        )
+        tester.run_link_prediction(type_constrain=False)
+        acc, p, r, f, _ = tester.run_triple_classification_four_metrics()
+        print(acc, p, r, f)
+
     else:
         raise NotImplementedError
