@@ -90,16 +90,20 @@ class MMRotatE(Model):
             h_ent[batch_size: batch_size+num] = batch_h[:num].clone()
             t_ent[batch_size: batch_size+num] = batch_t[:num].clone()
         else:
+            num = int(neg_num * self.beta * batch_size) if batch_size != None else 0
+            h_ent, h_img, t_ent, t_img = None, None, None, None
 
             if neg_mode == "normal":
-                pass
+                h_ent, h_img, t_ent, t_img = batch_h, batch_h, batch_t, batch_t
             else:
                 if neg_mode == "img":
                     h_img, t_img = batch_h, batch_t
                     h_ent = torch.tensor(batch_h[:batch_size]).repeat(neg_num + 1)
                     t_ent = torch.tensor(batch_t[:batch_size]).repeat(neg_num + 1)
                 elif neg_mode == "hybrid":
-                    pass
+                    h_ent, h_img, t_ent, t_img = batch_h.clone(), batch_h.clone(), batch_t.clone(), batch_t.clone()
+                    h_ent[batch_size: batch_size + num] = batch_h[0: num].clone()
+                    t_ent[batch_size: batch_size + num] = batch_t[0: num].clone()
 
         mode = data['mode']
         h = self.ent_embeddings(h_ent)
