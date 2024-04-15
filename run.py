@@ -2,7 +2,7 @@ import torch
 import mmns
 from mmns.config import Trainer, Tester
 from mmns.module.model import MMTransE, MMRotatE
-from mmns.module.loss import MarginLoss
+from mmns.module.loss import MarginLoss, SigmoidLoss, SoftplusLoss
 from mmns.module.strategy import NegativeSampling
 from mmns.data import TrainDataLoader, TestDataLoader
 from args import get_args
@@ -85,7 +85,8 @@ if __name__ == "__main__":
 
         model = NegativeSampling(
             model=rotate,
-            loss=MarginLoss(margin=args.margin),
+            loss=SigmoidLoss(adv_temperature=args.adv_temp),
+            # loss=MarginLoss(margin=args.margin),
             batch_size=train_dataloader.get_batch_size(),
             neg_mode=args.neg_mode
         )
